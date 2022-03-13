@@ -26,7 +26,8 @@ enum
     OP_ADD,    /* add  */
     OP_LD,     /* load */
     OP_ST,     /* store */
-    OP_PRINT    /* print string */
+    OP_PRINT,  /* print string */
+    OP_SCAN    /* scan variable */
 };
 
 enum
@@ -169,6 +170,23 @@ int main(int argc, char *argv[]) {
                             s += memblock[pos++];
                         }
                         printf(s.c_str());
+                    }
+                    break;
+                case OP_SCAN: {
+                        size_t pos = 0;
+                        if ((instruction >> 11) & 1) {
+                            uint16_t destination = (instruction >> 9) & 7;
+                            pos = registers[destination];
+                        }
+                        else {
+                            pos = instruction & 2047;
+                        }
+
+                        std::int16_t var = 0;
+                        scanf_s("%hi", &var);
+
+                        memblock[pos] = var >> 8;
+                        memblock[pos + 1] = var & 255;
                     }
                     break;
             }
