@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <memory>
 
 
 enum
@@ -70,8 +71,8 @@ int main(int argc, char *argv[]) {
         file.seekg(0, std::ios::end);
         int size = file.tellg();
         file.seekg(0, std::ios::beg);
-        char* memblock = new char[size];
-        file.read(memblock, size);
+        std::shared_ptr<char[]> memblock(new char[size]);
+        file.read(memblock.get(), size);
         file.close();
 
         registers[R_IP] = 0;
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
 
         while(registers[R_IP] < size) {
             uint16_t instruction;
-            instruction = (memblock[registers[R_IP]] << 8) + memblock[registers[R_IP] + 1];
+            instruction = uint16_t(memblock[registers[R_IP]] << 8) + uint8_t(memblock[registers[R_IP] + 1]);
             registers[R_IP] += 2;
             uint16_t op = instruction >> 12;
 
@@ -102,7 +103,7 @@ int main(int argc, char *argv[]) {
                             uint16_t second = instruction & 7;
                             registers[destination] = registers[first] & registers[second];
                         }
-                        update_flags(registers[destination]);
+                        update_flags(destination);
                     }
                     break;
                 case OP_NOT: {
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
                         uint16_t source = (instruction >> 6) & 7;
 
                         registers[destination] = ~registers[source];
-                        update_flags(registers[destination]);
+                        update_flags(destination);
                     }
                     break;
                 case OP_ADD: {
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]) {
                             uint16_t second = instruction & 7;
                             registers[destination] = registers[first] + registers[second];
                         }
-                        update_flags(registers[destination]);
+                        update_flags(destination);
                     }
                     break;
                 case OP_LD: {
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
                             pos = instruction & 255;
                         }
                         registers[destination] = (memblock[pos] << 8) + memblock[pos + 1];
-                        update_flags(registers[destination]);
+                        update_flags(destination);
                     }
                     break;
                 case OP_ST: {
@@ -158,35 +159,35 @@ int main(int argc, char *argv[]) {
                 case OP_PRINT: {
                         size_t pos = 0;
                         if ((instruction >> 11) & 1) {
-                            uint16_t source = (instruction >> 9) & 7;
-                            pos = registers[source];
+                            uint16_t source = (instruction >> 8) & 7;
+                            printf("%hi\n", registers[source]);
                         }
                         else {
                             pos = instruction & 2047;
-                        }
 
-                        std::string s = "";
-                        while (memblock[pos] != '\0') {
-                            s += memblock[pos++];
+                            std::string s = "";
+                            while (memblock[pos] != '\0') {
+                                s += memblock[pos++];
+                            }
+                            printf(s.c_str());
                         }
-                        printf(s.c_str());
                     }
                     break;
                 case OP_SCAN: {
                         size_t pos = 0;
                         if ((instruction >> 11) & 1) {
-                            uint16_t destination = (instruction >> 9) & 7;
-                            pos = registers[destination];
+                            uint16_t destination = (instruction >> 8) & 7;
+                            scanf_s("%hi", &registers[destination]);
                         }
                         else {
                             pos = instruction & 2047;
+
+                            std::int16_t var = 0;
+                            scanf_s("%hi", &var);
+
+                            memblock[pos] = var >> 8;
+                            memblock[pos + 1] = var & 255;
                         }
-
-                        std::int16_t var = 0;
-                        scanf_s("%hi", &var);
-
-                        memblock[pos] = var >> 8;
-                        memblock[pos + 1] = var & 255;
                     }
                     break;
             }
