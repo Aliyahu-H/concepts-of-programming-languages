@@ -1,0 +1,41 @@
+stack 1024
+string s = Это программа, рассчитывающая n-е число Фибоначчи. Пожалуйста, введите n: 
+
+
+
+BR main
+
+
+
+fibonachi
+
+ADD R6, R6, #-4
+POP R0
+ADD R6, R6, #6
+
+ADD R0, R0, #-1
+BRz end
+ADD R0, R0, #-1
+BRz end
+ADD R0, R0, #1
+PUSH R0
+CALL fibonachi
+POP R0
+ADD R0, R0, #-1
+PUSH R0
+CALL fibonachi
+POP R0
+RET
+
+end
+ADD R5, R5, #1
+RET
+
+
+main
+PRINT s
+SCAN R0
+PUSH R0
+CALL fibonachi
+POP R0
+PRINT R5
